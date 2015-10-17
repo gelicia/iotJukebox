@@ -17,6 +17,8 @@
   },
   "homepage": "https://github.com/gelicia/iotJukebox",
   "dependencies": {
-    "express": "^4.13.3"
+    "express": "^4.13.3",
+    "nedb": "^1.2.1",
+    "twit": "^2.1.0"
   }
 }

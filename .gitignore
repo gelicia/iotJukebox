@@ -1,3 +1,5 @@
 particleConfig.js
 twitterConfig.js
 public/bower_components
+playedSongs.db
+requestQueue.db

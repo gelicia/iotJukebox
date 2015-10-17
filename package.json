@@ -1,0 +1,22 @@
+{
+  "name": "iotJukebox",
+  "version": "1.0.0",
+  "description": "IOT Jukebox",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://gelicia@github.com/gelicia/iotJukebox.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/gelicia/iotJukebox/issues"
+  },
+  "homepage": "https://github.com/gelicia/iotJukebox",
+  "dependencies": {
+    "express": "^4.13.3"
+  }
+}

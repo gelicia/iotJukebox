@@ -4,7 +4,6 @@ var Twit = require('twit');
 var rest = require('restler');
 var Datastore = require('nedb');
 var q = require('q');
-var d3 = require('d3');
 var csv = require('fast-csv');
 
 var app = express();
@@ -30,7 +29,7 @@ function queueTweets() {
 	//get the 50 latest mentions
 	T.get('statuses/mentions_timeline', {count:50}, function (error, data) {
 		if (data !== undefined){
-			for (var i = 0; i < data.length; i++) {
+			for (var i = 0; i < data.length; i++) {				
 			var dataOfInterest = data[i];
 			//only look for tweets less than 24 hours old
 			var tweetDate = new Date(dataOfInterest.created_at);
@@ -40,11 +39,12 @@ function queueTweets() {
 				var isDisplayedPromise = isAlreadyDisplayed(dataOfInterest);
 				isDisplayedPromise.done(function(result){
 					if(result.toQueue){//tweet not found! queue it up!
-						var songData = processTweetData(result.data);	
-						if (songData !== undefined) {
-							requestQueue_db.insert(songData);
-							console.log("queueing ", songData);
-						}				
+						processTweetData(result.data).done(function(songData){
+							if (songData !== undefined) {
+								requestQueue_db.insert(songData);
+								console.log("queueing ", songData);
+							}	
+						});	
 					}
 				});
 			}
@@ -64,11 +64,12 @@ function queueTweets() {
 
 					isDisplayedPromise.done(function(result){
 						if(result.toQueue){//tweet not found! queue it up!
-							var songData = processTweetData(result.data);
-							if (songData !== undefined) {
-								requestQueue_db.insert(songData);
-								console.log("queueing ", songData);
-							}
+							processTweetData(result.data).done(function(songData){
+								if (songData !== undefined) {
+									requestQueue_db.insert(songData);
+									console.log("queueing ", songData);
+								}	
+							});	
 						}
 					});
 				}
@@ -78,40 +79,32 @@ function queueTweets() {
 }
 
 function processTweetData(tweetData){
-	//var fileStream = fs.createReadStream("../data/songs.csv"),
-    //parser = fastCsv();
+	var deferred = q.defer();
+
+	var tweetMessage = Number((tweetData.text).substring(tweetData.in_reply_to_screen_name.length+2).trim());
+
+	if (tweetMessage === NaN){
+		deferred.resolve(undefined);
+	}
+
+	var queueTweet = undefined;
 
 	csv
-	 .fromPath("../data/songs.csv")
-	 .on("data", function(data){
-	     console.log(data);
-	 })
-	 .on("end", function(){
-	     console.log("done");
+	 .fromPath("./public/data/songs.csv", {headers:true})
+	 .on("data", function(songs){
+	 	if (Number(songs.songNum) === tweetMessage){
+	 		queueTweet = {
+				"id" : tweetData.id,
+				created_at: new Date(tweetData.created_at),
+				message : tweetMessage
+			};
+			deferred.resolve(queueTweet);
+	 	}
+	 }).on("end", function(){
+	 	deferred.resolve(queueTweet);
 	 });
 
-	/*csv.parse('../data/songs.csv', function(songs){
-		var tweetMessage = Number((tweetData.text).substring(tweetData.in_reply_to_screen_name.length+2).trim());
-
-		if (tweetMessage !== NaN){
-			return undefined;
-		}
-
-		for (var i = 0; i < songs.length; i++) {
-			if (Number(songs[i].songNum) === tweetMessage){
-				var queueTweet = {
-					"id" : tweetData.id,
-					created_at: new Date(tweetData.created_at),
-					message : tweetMessage
-				};
-
-				return queueTweet;
-			}
-		};
-		
-	});*/
-
-	
+	 return deferred.promise;
 }
 
 function isTweetQueued(tweetData){
